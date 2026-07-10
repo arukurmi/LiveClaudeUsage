@@ -84,8 +84,8 @@ final class BarView: NSView {
     private func positionEmoji(atFillHeight fillHeight: CGFloat, barX: CGFloat, barWidth: CGFloat) {
         emojiField.sizeToFit()
         let size = emojiField.frame.size
-        // Inside the bar, hugging the top line of the fill from below.
-        let y = min(max(fillHeight - size.height, 0), bounds.height - size.height)
+        // Perched on top of the fill line: emoji bottom touches the fill's top edge.
+        let y = min(max(fillHeight, 0), bounds.height - size.height)
         let rawX = barX + (barWidth - size.width) / 2
         let x = min(max(rawX, 0), bounds.width - size.width)
         emojiField.frame = CGRect(x: x, y: y, width: size.width, height: size.height)
