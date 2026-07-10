@@ -1,0 +1,12 @@
+{
+  "side": "right",
+  "widthPx": 6,
+  "pollIntervalSeconds": 120,
+  "showEmoji": true,
+  "thresholds": [
+    { "upTo": 50,  "color": "#34C759", "emoji": "😊" },
+    { "upTo": 75,  "color": "#FFCC00", "emoji": "😐" },
+    { "upTo": 90,  "color": "#FF9500", "emoji": "😬" },
+    { "upTo": 100, "color": "#FF3B30", "emoji": "🚨" }
+  ]
+}

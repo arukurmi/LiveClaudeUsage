@@ -78,7 +78,8 @@ final class BarView: NSView {
         emojiField.sizeToFit()
         let size = emojiField.frame.size
         let y = min(max(fillHeight - size.height / 2, 0), bounds.height - size.height)
-        let x = config.side == "left" ? barX + barWidth : barX - size.width
+        let rawX = config.side == "left" ? barX + barWidth + 2 : barX - size.width - 2
+        let x = min(max(rawX, 0), bounds.width - size.width)
         emojiField.frame = CGRect(x: x, y: y, width: size.width, height: size.height)
     }
 }

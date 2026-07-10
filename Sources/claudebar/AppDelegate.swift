@@ -13,7 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let config = BarConfig.load()
-        guard let screen = NSScreen.main else {
+        guard let screen = OverlayWindow.builtInScreen() else {
             FileHandle.standardError.write(Data("claudebar: no screen available\n".utf8))
             NSApp.terminate(nil)
             return
