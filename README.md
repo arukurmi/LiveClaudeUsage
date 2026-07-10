@@ -28,6 +28,12 @@ Screen right edge (~6px wide)
         │██│
 ```
 
+## 📸 See it
+
+| Fresh 😊 | Getting there 😬 | Almost out 🚨 |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/bar-green.png" height="400"> | <img src="docs/screenshots/bar-orange.png" height="400"> | <img src="docs/screenshots/bar-red.png" height="400"> |
+
 ## 🚦 What the colors mean
 
 | Usage | Bar color | Emoji |
