@@ -3,6 +3,8 @@ import ClaudeBarCore
 
 enum DisplayState: Equatable {
     case usage(percent: Double)
+    /// Fetch failing, but we have a last known value — show it dimmed with a warning.
+    case stale(percent: Double)
     case error
 }
 
@@ -55,20 +57,22 @@ final class BarView: NSView {
         trackLayer.frame = CGRect(x: barX, y: 0, width: barWidth, height: bounds.height)
 
         switch state {
-        case .usage(let percent):
+        case .usage(let percent), .stale(let percent):
+            let isStale = { if case .stale = state { return true } else { return false } }()
             let clamped = min(max(percent, 0), 100)
             let threshold = config.threshold(forPercent: clamped)
             let rgb = HexColor.rgb(threshold.color) ?? (r: 1, g: 0, b: 0)
-            fillLayer.backgroundColor = CGColor(red: rgb.r, green: rgb.g, blue: rgb.b, alpha: 0.9)
+            fillLayer.backgroundColor = CGColor(red: rgb.r, green: rgb.g, blue: rgb.b,
+                                                alpha: isStale ? 0.45 : 0.9)
             let fillHeight = bounds.height * clamped / 100
             fillLayer.frame = CGRect(x: barX, y: 0, width: barWidth, height: fillHeight)
-            emojiField.isHidden = !config.showEmoji
-            if config.showEmoji {
-                emojiField.stringValue = threshold.emoji
+            emojiField.isHidden = !config.showEmoji && !isStale
+            if !emojiField.isHidden {
+                emojiField.stringValue = isStale ? "⚠️" : threshold.emoji
                 positionEmoji(atFillHeight: fillHeight, barX: barX, barWidth: barWidth)
             }
         case .error:
-            fillLayer.backgroundColor = NSColor.gray.withAlphaComponent(0.5).cgColor
+            fillLayer.backgroundColor = NSColor.systemGray.withAlphaComponent(0.8).cgColor
             fillLayer.frame = CGRect(x: barX, y: 0, width: barWidth, height: bounds.height)
             emojiField.isHidden = false
             emojiField.stringValue = "⚠️"
