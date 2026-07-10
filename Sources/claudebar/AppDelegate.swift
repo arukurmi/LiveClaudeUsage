@@ -4,6 +4,7 @@ import ClaudeBarCore
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let demo: Bool
     private var window: OverlayWindow!
+    private var barView: BarView!
 
     init(demo: Bool) {
         self.demo = demo
@@ -17,11 +18,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         window = OverlayWindow(config: config, screen: screen)
-        // Temporary: solid strip to verify placement; BarView replaces this next task.
-        let view = NSView()
-        view.wantsLayer = true
-        view.layer?.backgroundColor = NSColor.systemGreen.withAlphaComponent(0.8).cgColor
-        window.contentView = view
+        let barView = BarView(config: config)
+        window.contentView = barView
+        self.barView = barView
         window.orderFrontRegardless()
+        barView.render(.usage(percent: 63)) // temporary fixed value; poller arrives in Task 7
     }
 }
