@@ -65,7 +65,11 @@ final class BarView: NSView {
                 positionEmoji(atFillHeight: fillHeight, barX: barX, barWidth: barWidth)
             }
         case .error:
-            break // Task 8
+            fillLayer.backgroundColor = NSColor.gray.withAlphaComponent(0.5).cgColor
+            fillLayer.frame = CGRect(x: barX, y: 0, width: barWidth, height: bounds.height)
+            emojiField.isHidden = false
+            emojiField.stringValue = "⚠️"
+            positionEmoji(atFillHeight: bounds.height / 2, barX: barX, barWidth: barWidth)
         }
         CATransaction.commit()
     }
