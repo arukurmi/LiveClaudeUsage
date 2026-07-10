@@ -62,8 +62,9 @@ final class BarView: NSView {
             let clamped = min(max(percent, 0), 100)
             let threshold = config.threshold(forPercent: clamped)
             let rgb = HexColor.rgb(threshold.color) ?? (r: 1, g: 0, b: 0)
-            fillLayer.backgroundColor = CGColor(red: rgb.r, green: rgb.g, blue: rgb.b,
-                                                alpha: isStale ? 0.45 : 0.9)
+            // Stale data stays fully visible — a minutes-old percentage is still
+            // useful; only the emoji signals that updates are paused.
+            fillLayer.backgroundColor = CGColor(red: rgb.r, green: rgb.g, blue: rgb.b, alpha: 0.9)
             let fillHeight = bounds.height * clamped / 100
             fillLayer.frame = CGRect(x: barX, y: 0, width: barWidth, height: fillHeight)
             emojiField.isHidden = !config.showEmoji && !isStale

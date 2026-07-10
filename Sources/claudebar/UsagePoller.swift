@@ -9,12 +9,24 @@ final class UsagePoller {
     private var lastGoodPercent: Double?
     private var consecutiveFailures = 0
 
+    private static let lastGoodKey = "lastGoodPercent"
+    private static let lastGoodAtKey = "lastGoodAt"
+
     init(intervalSeconds: TimeInterval, onUpdate: @escaping (DisplayState) -> Void) {
         self.interval = intervalSeconds
         self.onUpdate = onUpdate
+        // Survive restarts: a value from the last hour beats a gray "no data" bar.
+        let defaults = UserDefaults.standard
+        let savedAt = defaults.double(forKey: Self.lastGoodAtKey)
+        if savedAt > 0, Date().timeIntervalSince1970 - savedAt < 3600 {
+            lastGoodPercent = defaults.double(forKey: Self.lastGoodKey)
+        }
     }
 
     func start() {
+        if let percent = lastGoodPercent {
+            onUpdate(.stale(percent: percent))
+        }
         tick()
     }
 
@@ -27,6 +39,9 @@ final class UsagePoller {
                 case .success(let snapshot):
                     self.consecutiveFailures = 0
                     self.lastGoodPercent = snapshot.percent
+                    let defaults = UserDefaults.standard
+                    defaults.set(snapshot.percent, forKey: Self.lastGoodKey)
+                    defaults.set(Date().timeIntervalSince1970, forKey: Self.lastGoodAtKey)
                     self.onUpdate(.usage(percent: snapshot.percent))
                 case .failure:
                     self.consecutiveFailures += 1
