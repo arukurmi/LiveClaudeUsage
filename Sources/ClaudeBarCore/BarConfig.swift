@@ -64,7 +64,7 @@ public struct BarConfig: Equatable {
     private mutating func sanitize() {
         if side != "left" && side != "right" { side = Self.default.side }
         if !(widthPx > 0 && widthPx <= 40) { widthPx = Self.default.widthPx }
-        if !(pollIntervalSeconds >= 30) { pollIntervalSeconds = Self.default.pollIntervalSeconds }
+        if !(pollIntervalSeconds >= 5) { pollIntervalSeconds = Self.default.pollIntervalSeconds }
         if thresholds.isEmpty { thresholds = Self.default.thresholds }
         thresholds.sort { $0.upTo < $1.upTo }
     }

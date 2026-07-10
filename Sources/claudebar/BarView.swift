@@ -20,7 +20,7 @@ final class BarView: NSView {
         trackLayer.backgroundColor = NSColor.gray.withAlphaComponent(0.15).cgColor
         layer?.addSublayer(trackLayer)
         layer?.addSublayer(fillLayer)
-        emojiField.font = .systemFont(ofSize: 13)
+        emojiField.font = .systemFont(ofSize: 10)
         emojiField.backgroundColor = .clear
         emojiField.isBezeled = false
         emojiField.alignment = .center
@@ -77,8 +77,9 @@ final class BarView: NSView {
     private func positionEmoji(atFillHeight fillHeight: CGFloat, barX: CGFloat, barWidth: CGFloat) {
         emojiField.sizeToFit()
         let size = emojiField.frame.size
-        let y = min(max(fillHeight - size.height / 2, 0), bounds.height - size.height)
-        let rawX = config.side == "left" ? barX + barWidth + 2 : barX - size.width - 2
+        // Sits on top of the fill line, centered on the bar itself.
+        let y = min(max(fillHeight, 0), bounds.height - size.height)
+        let rawX = barX + (barWidth - size.width) / 2
         let x = min(max(rawX, 0), bounds.width - size.width)
         emojiField.frame = CGRect(x: x, y: y, width: size.width, height: size.height)
     }

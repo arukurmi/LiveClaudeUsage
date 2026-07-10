@@ -14,8 +14,8 @@ final class OverlayWindow: NSWindow {
     }
 
     init(config: BarConfig, screen: NSScreen) {
-        // Wider than the bar itself so the emoji has room; still click-through.
-        let windowWidth = CGFloat(config.widthPx) + 26
+        // Just wide enough for the emoji sitting on the bar; still click-through.
+        let windowWidth = max(CGFloat(config.widthPx), 16)
         let screenFrame = screen.frame
         let x = config.side == "left" ? screenFrame.minX : screenFrame.maxX - windowWidth
         let frame = NSRect(x: x, y: screenFrame.minY, width: windowWidth, height: screenFrame.height)

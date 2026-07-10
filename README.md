@@ -79,7 +79,7 @@ defaults; invalid values fall back safely.
 |-----|--------------|---------|
 | `side` | `"left"` or `"right"` screen edge | `"right"` |
 | `widthPx` | Bar thickness in points (1–40) | `6` |
-| `pollIntervalSeconds` | How often to fetch usage (min 30) | `120` |
+| `pollIntervalSeconds` | How often to fetch usage (min 5) | `120` |
 | `showEmoji` | Show the emoji riding the fill line | `true` |
 | `thresholds` | Your own colors 🎨 and emojis, any number of tiers | see above |
 
