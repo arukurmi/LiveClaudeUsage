@@ -68,8 +68,8 @@ defaults; invalid values fall back safely.
 
 ```json
 {
-  "side": "right",
-  "widthPx": 6,
+  "side": "left",
+  "widthPx": 12,
   "pollIntervalSeconds": 120,
   "showEmoji": true,
   "thresholds": [
@@ -83,8 +83,8 @@ defaults; invalid values fall back safely.
 
 | Key | What it does | Default |
 |-----|--------------|---------|
-| `side` | `"left"` or `"right"` screen edge | `"right"` |
-| `widthPx` | Bar thickness in points (1–40) | `6` |
+| `side` | `"left"` or `"right"` screen edge | `"left"` |
+| `widthPx` | Bar thickness in points (1–40) | `12` |
 | `pollIntervalSeconds` | How often to fetch usage (min 5) | `120` |
 | `showEmoji` | Show the emoji riding the fill line | `true` |
 | `thresholds` | Your own colors 🎨 and emojis, any number of tiers | see above |

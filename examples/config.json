@@ -1,6 +1,6 @@
 {
-  "side": "right",
-  "widthPx": 6,
+  "side": "left",
+  "widthPx": 12,
   "pollIntervalSeconds": 120,
   "showEmoji": true,
   "thresholds": [

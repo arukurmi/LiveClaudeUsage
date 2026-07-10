@@ -20,6 +20,10 @@ install: build
 	cp .build/release/claudebar $(BIN)
 	sed 's|__BIN__|$(BIN)|' resources/$(LABEL).plist > $(PLIST)
 	-launchctl bootout gui/$(UID)/$(LABEL) 2>/dev/null
+	@for i in 1 2 3 4 5 6 7 8 9 10; do \
+		launchctl print gui/$(UID)/$(LABEL) >/dev/null 2>&1 || break; \
+		sleep 1; \
+	done
 	launchctl bootstrap gui/$(UID) $(PLIST)
 	@echo "claudebar installed and running (starts at login)."
 

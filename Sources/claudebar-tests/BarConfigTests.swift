@@ -22,8 +22,8 @@ func runBarConfigTests() {
 
     let invalid = BarConfig.load(from: tempFile(
         #"{"side": "top", "widthPx": -3, "pollIntervalSeconds": 1}"#))
-    expectEqual(invalid.side, "right", "invalid side falls back")
-    expectEqual(invalid.widthPx, 6, "invalid width falls back")
+    expectEqual(invalid.side, "left", "invalid side falls back")
+    expectEqual(invalid.widthPx, 12, "invalid width falls back")
     expectEqual(invalid.pollIntervalSeconds, 120, "too-small poll interval falls back")
 
     expectEqual(BarConfig.load(from: tempFile("{oops")), .default,

@@ -26,6 +26,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.contentView = barView
         self.barView = barView
         window.orderFrontRegardless()
+        // The window can get lost on Space switches, display sleep, or screen
+        // reconfiguration even though the process keeps running — re-assert it
+        // on those events and on every data update.
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in self?.window.reassert() }
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.activeSpaceDidChangeNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in self?.window.reassert() }
+
+        if let fixedIndex = CommandLine.arguments.firstIndex(of: "--fixed"),
+           fixedIndex + 1 < CommandLine.arguments.count,
+           let fixedPercent = Double(CommandLine.arguments[fixedIndex + 1]) {
+            barView.render(.usage(percent: fixedPercent))
+            return
+        }
+
         if demo {
             demoTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
                 guard let self else { return }
@@ -37,6 +56,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             poller = UsagePoller(intervalSeconds: config.pollIntervalSeconds) { [weak self] state in
                 self?.barView.render(state)
+                self?.window.reassert()
             }
             poller?.start()
         }
