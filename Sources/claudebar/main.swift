@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import ClaudeBarCore
 
@@ -18,4 +19,8 @@ if arguments.contains("--once") {
     }
 }
 
-print("claudebar: run with --once to print usage (overlay comes in a later phase)")
+let app = NSApplication.shared
+let delegate = AppDelegate(demo: arguments.contains("--demo"))
+app.delegate = delegate
+app.setActivationPolicy(.accessory)
+app.run()
