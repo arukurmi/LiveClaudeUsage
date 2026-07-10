@@ -5,6 +5,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let demo: Bool
     private var window: OverlayWindow!
     private var barView: BarView!
+    private var poller: UsagePoller?
 
     init(demo: Bool) {
         self.demo = demo
@@ -22,6 +23,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.contentView = barView
         self.barView = barView
         window.orderFrontRegardless()
-        barView.render(.usage(percent: 63)) // temporary fixed value; poller arrives in Task 7
+        poller = UsagePoller(intervalSeconds: config.pollIntervalSeconds) { [weak self] state in
+            self?.barView.render(state)
+        }
+        poller?.start()
     }
 }
