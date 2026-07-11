@@ -7,10 +7,12 @@ final class UsagePoller {
     private let fetcher = UsageFetcher()
     private var timer: Timer?
     private var lastGoodPercent: Double?
+    private var lastResetsAt: Date?
     private var consecutiveFailures = 0
 
     private static let lastGoodKey = "lastGoodPercent"
     private static let lastGoodAtKey = "lastGoodAt"
+    private static let lastResetsAtKey = "lastResetsAt"
 
     init(intervalSeconds: TimeInterval, onUpdate: @escaping (DisplayState) -> Void) {
         self.interval = intervalSeconds
@@ -20,12 +22,17 @@ final class UsagePoller {
         let savedAt = defaults.double(forKey: Self.lastGoodAtKey)
         if savedAt > 0, Date().timeIntervalSince1970 - savedAt < 3600 {
             lastGoodPercent = defaults.double(forKey: Self.lastGoodKey)
+            let savedReset = defaults.double(forKey: Self.lastResetsAtKey)
+            // Only a reset time still in the future is worth showing.
+            if savedReset > Date().timeIntervalSince1970 {
+                lastResetsAt = Date(timeIntervalSince1970: savedReset)
+            }
         }
     }
 
     func start() {
         if let percent = lastGoodPercent {
-            onUpdate(.stale(percent: percent))
+            onUpdate(.stale(percent: percent, resetsAt: lastResetsAt))
         }
         tick()
     }
@@ -39,14 +46,17 @@ final class UsagePoller {
                 case .success(let snapshot):
                     self.consecutiveFailures = 0
                     self.lastGoodPercent = snapshot.percent
+                    self.lastResetsAt = snapshot.resetsAt
                     let defaults = UserDefaults.standard
                     defaults.set(snapshot.percent, forKey: Self.lastGoodKey)
                     defaults.set(Date().timeIntervalSince1970, forKey: Self.lastGoodAtKey)
-                    self.onUpdate(.usage(percent: snapshot.percent))
+                    defaults.set(snapshot.resetsAt?.timeIntervalSince1970 ?? 0,
+                                 forKey: Self.lastResetsAtKey)
+                    self.onUpdate(.usage(percent: snapshot.percent, resetsAt: snapshot.resetsAt))
                 case .failure:
                     self.consecutiveFailures += 1
                     if let percent = self.lastGoodPercent {
-                        self.onUpdate(.stale(percent: percent))
+                        self.onUpdate(.stale(percent: percent, resetsAt: self.lastResetsAt))
                     } else {
                         self.onUpdate(.error)
                     }

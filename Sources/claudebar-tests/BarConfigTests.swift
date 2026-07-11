@@ -29,6 +29,16 @@ func runBarConfigTests() {
     expectEqual(BarConfig.load(from: tempFile("{oops")), .default,
                 "malformed JSON gives defaults")
 
+    expect(BarConfig.default.showResetTime, "reset time shown by default")
+    expect(!BarConfig.load(from: tempFile(#"{"showResetTime": false}"#)).showResetTime,
+           "showResetTime can be disabled")
+
+    let utc = TimeZone(identifier: "UTC")!
+    expectEqual(ResetTimeFormatter.string(from: Date(timeIntervalSince1970: 0), timeZone: utc),
+                "12:00AM", "midnight formats")
+    expectEqual(ResetTimeFormatter.string(from: Date(timeIntervalSince1970: 59_400), timeZone: utc),
+                "4:30PM", "afternoon formats without leading zero")
+
     let config = BarConfig.default
     expectEqual(config.threshold(forPercent: 0).emoji, "😊", "0%")
     expectEqual(config.threshold(forPercent: 50).emoji, "😊", "50% boundary")

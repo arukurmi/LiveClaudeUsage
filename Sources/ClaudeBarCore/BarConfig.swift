@@ -17,6 +17,7 @@ public struct BarConfig: Equatable {
     public var widthPx: Double
     public var pollIntervalSeconds: Double
     public var showEmoji: Bool
+    public var showResetTime: Bool
     public var thresholds: [Threshold]
 
     public static let `default` = BarConfig(
@@ -24,6 +25,7 @@ public struct BarConfig: Equatable {
         widthPx: 12,
         pollIntervalSeconds: 120,
         showEmoji: true,
+        showResetTime: true,
         thresholds: [
             Threshold(upTo: 50, color: "#34C759", emoji: "😊"),
             Threshold(upTo: 75, color: "#FFCC00", emoji: "😐"),
@@ -42,6 +44,7 @@ public struct BarConfig: Equatable {
         let widthPx: Double?
         let pollIntervalSeconds: Double?
         let showEmoji: Bool?
+        let showResetTime: Bool?
         let thresholds: [Threshold]?
     }
 
@@ -56,6 +59,7 @@ public struct BarConfig: Equatable {
         if let widthPx = partial.widthPx { config.widthPx = widthPx }
         if let poll = partial.pollIntervalSeconds { config.pollIntervalSeconds = poll }
         if let showEmoji = partial.showEmoji { config.showEmoji = showEmoji }
+        if let showResetTime = partial.showResetTime { config.showResetTime = showResetTime }
         if let thresholds = partial.thresholds { config.thresholds = thresholds }
         config.sanitize()
         return config
