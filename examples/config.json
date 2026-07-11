@@ -3,6 +3,7 @@
   "widthPx": 12,
   "pollIntervalSeconds": 120,
   "showEmoji": true,
+  "showResetTime": true,
   "thresholds": [
     { "upTo": 50,  "color": "#34C759", "emoji": "😊" },
     { "upTo": 75,  "color": "#FFCC00", "emoji": "😐" },

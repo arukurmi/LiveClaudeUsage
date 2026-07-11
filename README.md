@@ -72,6 +72,7 @@ defaults; invalid values fall back safely.
   "widthPx": 12,
   "pollIntervalSeconds": 120,
   "showEmoji": true,
+  "showResetTime": true,
   "thresholds": [
     { "upTo": 50,  "color": "#34C759", "emoji": "😊" },
     { "upTo": 75,  "color": "#FFCC00", "emoji": "😐" },
@@ -87,6 +88,7 @@ defaults; invalid values fall back safely.
 | `widthPx` | Bar thickness in points (1–40) | `12` |
 | `pollIntervalSeconds` | How often to fetch usage (min 5) | `120` |
 | `showEmoji` | Show the emoji riding the fill line | `true` |
+| `showResetTime` | Show the window's reset time (local, e.g. `4:30PM`) rotated at the bottom of the bar | `true` |
 | `thresholds` | Your own colors 🎨 and emojis, any number of tiers | see above |
 
 After editing the config, restart the bar:
