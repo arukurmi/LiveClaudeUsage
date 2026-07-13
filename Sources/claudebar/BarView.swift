@@ -82,7 +82,7 @@ final class BarView: NSView {
                 emojiField.stringValue = isStale ? "⚠️" : threshold.emoji
                 positionEmoji(atFillHeight: fillHeight, barX: barX, barWidth: barWidth)
             }
-            renderResetTime(resetsAt, barX: barX, barWidth: barWidth)
+            renderResetTime(resetsAt, fillHeight: fillHeight, barX: barX, barWidth: barWidth)
         case .error:
             fillLayer.backgroundColor = NSColor.systemGray.withAlphaComponent(0.8).cgColor
             fillLayer.frame = CGRect(x: barX, y: 0, width: barWidth, height: bounds.height)
@@ -95,8 +95,9 @@ final class BarView: NSView {
     }
 
     /// Reset time rotated 90° so it reads bottom-to-top inside the bar,
-    /// anchored just above the bottom edge.
-    private func renderResetTime(_ resetsAt: Date?, barX: CGFloat, barWidth: CGFloat) {
+    /// centered on the midpoint of the filled portion so it rides up as usage grows.
+    private func renderResetTime(_ resetsAt: Date?, fillHeight: CGFloat,
+                                 barX: CGFloat, barWidth: CGFloat) {
         guard config.showResetTime, let resetsAt else {
             timeLayer.isHidden = true
             return
@@ -112,9 +113,12 @@ final class BarView: NSView {
         timeLayer.string = attributed
         let size = attributed.size()
         // bounds is the unrotated text box; after the 90° transform its width
-        // runs up the screen, so position it half that width above the bottom.
+        // runs up the screen. Center it at half the fill height, clamped so a
+        // near-empty or near-full bar never pushes the text off screen.
         timeLayer.bounds = CGRect(x: 0, y: 0, width: ceil(size.width), height: ceil(size.height))
-        timeLayer.position = CGPoint(x: barX + barWidth / 2, y: 4 + ceil(size.width) / 2)
+        let halfLength = ceil(size.width) / 2
+        let y = min(max(fillHeight / 2, halfLength + 2), bounds.height - halfLength - 2)
+        timeLayer.position = CGPoint(x: barX + barWidth / 2, y: y)
     }
 
     private func positionEmoji(atFillHeight fillHeight: CGFloat, barX: CGFloat, barWidth: CGFloat) {
