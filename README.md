@@ -8,7 +8,10 @@
 A whisper-thin, always-on-top bar hugging your screen edge that shows how much of
 your **Claude 5-hour session limit** you've used — live. Green and 😊 when you're
 fresh, red and 🚨 when you're about to hit the wall. It's **click-through**: your
-mouse never knows it's there.
+mouse never knows it's there — until you hover it. Hovering reveals a small **–**
+chip; click it and the bar tucks itself into a tiny dot near the bottom corner
+(perfect for full-screen video). Click the dot to bring the bar back. The reset
+time of your 5-hour window rides the middle of the fill, rotated to fit.
 
 ## 😩 Why
 
@@ -88,7 +91,7 @@ defaults; invalid values fall back safely.
 | `widthPx` | Bar thickness in points (1–40) | `12` |
 | `pollIntervalSeconds` | How often to fetch usage (min 5) | `120` |
 | `showEmoji` | Show the emoji riding the fill line | `true` |
-| `showResetTime` | Show the window's reset time (local, e.g. `4:30PM`) rotated at the bottom of the bar | `true` |
+| `showResetTime` | Show the window's reset time (local, e.g. `4:30PM`) rotated at the middle of the fill | `true` |
 | `thresholds` | Your own colors 🎨 and emojis, any number of tiers | see above |
 
 After editing the config, restart the bar:
