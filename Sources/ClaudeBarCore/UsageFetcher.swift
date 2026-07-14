@@ -112,6 +112,9 @@ public struct UsageFetcher {
             return .failure(.tokenUnavailable)
         }
         var request = URLRequest(url: URL(string: "https://api.anthropic.com/api/oauth/usage")!)
+        // A response that hasn't arrived in 15s isn't coming; without this the
+        // session default (60s between bytes) can stretch a dead request for minutes.
+        request.timeoutInterval = 15
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
 
