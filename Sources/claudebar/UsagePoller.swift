@@ -10,6 +10,10 @@ final class UsagePoller {
     private var lastResetsAt: Date?
     private var consecutiveFailures = 0
     private var inFlight = false
+    private var watchdog: Timer?
+    /// Latest moment by which the next tick should have started; the watchdog
+    /// force-restarts polling past this point.
+    private var nextTickDeadline = Date.distantFuture
 
     private static let lastGoodKey = "lastGoodPercent"
     private static let lastGoodAtKey = "lastGoodAt"
@@ -36,6 +40,21 @@ final class UsagePoller {
             onUpdate(.stale(percent: percent, resetsAt: lastResetsAt))
         }
         tick()
+        startWatchdog()
+    }
+
+    /// The poll loop is a chain of one-shot timers; if any link ever drops
+    /// (missed timer, lost fetch completion), polling used to stop until the
+    /// app restarted. The watchdog notices a missed deadline and restarts it.
+    private func startWatchdog() {
+        let watchdog = Timer(timeInterval: 30, repeats: true) { [weak self] _ in
+            guard let self, Date() > self.nextTickDeadline else { return }
+            self.inFlight = false // a completion this overdue is lost, not pending
+            self.tick()
+        }
+        watchdog.tolerance = 5
+        RunLoop.main.add(watchdog, forMode: .common)
+        self.watchdog = watchdog
     }
 
     /// Main thread only. Multiple callers (timer, watchdog, wake refresh) may
@@ -43,6 +62,8 @@ final class UsagePoller {
     private func tick() {
         guard !inFlight else { return }
         inFlight = true
+        // fetch() is bounded at ~30s; a completion 120s out is lost.
+        nextTickDeadline = Date().addingTimeInterval(120)
         DispatchQueue.global(qos: .utility).async { [weak self] in
             guard let self else { return }
             let result = self.fetcher.fetch()
@@ -74,6 +95,7 @@ final class UsagePoller {
 
     private func scheduleNext() {
         let delay = PollBackoff.delay(interval: interval, consecutiveFailures: consecutiveFailures)
+        nextTickDeadline = Date().addingTimeInterval(delay + 60)
         timer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             self?.tick()
         }
