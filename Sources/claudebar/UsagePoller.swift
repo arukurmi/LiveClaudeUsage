@@ -115,8 +115,13 @@ final class UsagePoller {
     private func scheduleNext() {
         let delay = PollBackoff.delay(interval: interval, consecutiveFailures: consecutiveFailures)
         nextTickDeadline = Date().addingTimeInterval(delay + 60)
-        timer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
+        // .common mode: default-mode timers stall while the run loop tracks
+        // mouse events, which could hold a tick back indefinitely.
+        let timer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
             self?.tick()
         }
+        timer.tolerance = min(delay * 0.1, 10)
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
     }
 }
