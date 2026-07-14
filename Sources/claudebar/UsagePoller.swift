@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import ClaudeBarCore
 
@@ -41,6 +42,24 @@ final class UsagePoller {
         }
         tick()
         startWatchdog()
+        // Ticks that failed while the machine was asleep or the keychain was
+        // locked leave the backoff at up to 10 minutes; without these the bar
+        // sat stale that long after opening the lid.
+        let workspace = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.didWakeNotification,
+                     NSWorkspace.screensDidWakeNotification,
+                     NSWorkspace.sessionDidBecomeActiveNotification] {
+            workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.refreshNow()
+            }
+        }
+    }
+
+    /// Forget accumulated backoff and fetch immediately.
+    private func refreshNow() {
+        consecutiveFailures = 0
+        timer?.invalidate()
+        tick()
     }
 
     /// The poll loop is a chain of one-shot timers; if any link ever drops
