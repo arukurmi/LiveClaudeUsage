@@ -112,6 +112,18 @@ monitors connected.
 
 Native Swift + AppKit. One ~200KB binary. Zero dependencies. Near-zero CPU.
 
+### ⏱️ Polling that can't silently die
+
+- Every request has a hard timeout (15s request, 30s overall) — a hung
+  connection can never freeze the poll loop.
+- A watchdog restarts polling if a tick is ever missed, whatever the cause.
+- Failures (offline, rate limits) back off exponentially up to 10 minutes,
+  showing the last known value dimmed instead of hiding the bar.
+- On wake from sleep, screen wake, or session unlock the backoff resets and
+  the bar refreshes within seconds.
+- The app opts out of App Nap (while still allowing system sleep), so ticks
+  fire at the configured interval, not whenever macOS feels like it.
+
 ## 🛠️ CLI flags
 
 | Flag | What it does |
