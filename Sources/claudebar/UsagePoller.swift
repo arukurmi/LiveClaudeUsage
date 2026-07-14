@@ -9,6 +9,7 @@ final class UsagePoller {
     private var lastGoodPercent: Double?
     private var lastResetsAt: Date?
     private var consecutiveFailures = 0
+    private var inFlight = false
 
     private static let lastGoodKey = "lastGoodPercent"
     private static let lastGoodAtKey = "lastGoodAt"
@@ -37,11 +38,16 @@ final class UsagePoller {
         tick()
     }
 
+    /// Main thread only. Multiple callers (timer, watchdog, wake refresh) may
+    /// request a tick; only one fetch runs at a time.
     private func tick() {
+        guard !inFlight else { return }
+        inFlight = true
         DispatchQueue.global(qos: .utility).async { [weak self] in
             guard let self else { return }
             let result = self.fetcher.fetch()
             DispatchQueue.main.async {
+                self.inFlight = false
                 switch result {
                 case .success(let snapshot):
                     self.consecutiveFailures = 0
