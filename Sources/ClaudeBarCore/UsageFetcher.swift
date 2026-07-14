@@ -119,28 +119,53 @@ public struct UsageFetcher {
         request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
 
         let semaphore = DispatchSemaphore(value: 0)
-        var result: Result<UsageSnapshot, FetchError> = .failure(.network("no response"))
-        session.dataTask(with: request) { data, response, error in
+        let box = ResultBox()
+        let task = session.dataTask(with: request) { data, response, error in
             defer { semaphore.signal() }
             if let error {
-                result = .failure(.network(error.localizedDescription))
+                box.set(.failure(.network(error.localizedDescription)))
                 return
             }
             guard let http = response as? HTTPURLResponse else {
-                result = .failure(.network("not an HTTP response"))
+                box.set(.failure(.network("not an HTTP response")))
                 return
             }
             guard http.statusCode == 200 else {
-                result = .failure(.badStatus(http.statusCode))
+                box.set(.failure(.badStatus(http.statusCode)))
                 return
             }
             guard let data else {
-                result = .failure(.decodeFailed)
+                box.set(.failure(.decodeFailed))
                 return
             }
-            result = UsageDecoder.decode(data)
-        }.resume()
-        semaphore.wait()
-        return result
+            box.set(UsageDecoder.decode(data))
+        }
+        task.resume()
+        // The request timeout should fire the callback well before this, but a
+        // callback that never arrives must not freeze the poll loop forever.
+        if semaphore.wait(timeout: .now() + 30) == .timedOut {
+            task.cancel()
+            return .failure(.network("request hung"))
+        }
+        return box.get()
+    }
+}
+
+/// Lock-guarded result cell: the data-task callback may still fire after a
+/// timed-out `fetch` has returned, so the two must not race on a plain var.
+private final class ResultBox {
+    private let lock = NSLock()
+    private var value: Result<UsageSnapshot, FetchError> = .failure(.network("no response"))
+
+    func set(_ newValue: Result<UsageSnapshot, FetchError>) {
+        lock.lock()
+        value = newValue
+        lock.unlock()
+    }
+
+    func get() -> Result<UsageSnapshot, FetchError> {
+        lock.lock()
+        defer { lock.unlock() }
+        return value
     }
 }
