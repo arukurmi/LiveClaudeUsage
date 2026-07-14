@@ -66,13 +66,8 @@ final class UsagePoller {
         }
     }
 
-    /// Normal cadence on success; exponential backoff up to 10 minutes while
-    /// failing (rate limits, offline) so we never hammer the endpoint.
     private func scheduleNext() {
-        var delay = interval
-        if consecutiveFailures > 0 {
-            delay = min(interval * pow(2, Double(consecutiveFailures)), 600)
-        }
+        let delay = PollBackoff.delay(interval: interval, consecutiveFailures: consecutiveFailures)
         timer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             self?.tick()
         }
