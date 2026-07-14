@@ -11,6 +11,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var demoPercent: Double = 0
     private var demoRising = true
 
+    private var activityToken: NSObjectProtocol?
+
     private static let collapsedKey = "barCollapsed"
 
     init(demo: Bool) {
@@ -18,6 +20,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // App Nap throttles accessory apps' timers, stretching the poll
+        // cadence far past the configured interval. Opting out keeps ticks on
+        // time; "AllowingIdleSystemSleep" means we never keep the Mac awake.
+        activityToken = ProcessInfo.processInfo.beginActivity(
+            options: .userInitiatedAllowingIdleSystemSleep,
+            reason: "polling Claude usage on a fixed cadence")
+
         let config = BarConfig.load()
         guard let screen = OverlayWindow.builtInScreen() else {
             FileHandle.standardError.write(Data("claudebar: no screen available\n".utf8))
