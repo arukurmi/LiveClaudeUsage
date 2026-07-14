@@ -4,5 +4,6 @@ print("claudebar-tests")
 
 runUsageDecoderTests()
 runBarConfigTests()
+runPollBackoffTests()
 
 finishTests()
