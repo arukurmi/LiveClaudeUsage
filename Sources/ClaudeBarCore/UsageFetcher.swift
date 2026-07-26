@@ -24,7 +24,21 @@ public enum FetchError: Error, Equatable {
     case tokenUnavailable
     case network(String)
     case badStatus(Int)
+    /// 429/529 from the server. `retryAfter`, when present, is the number of
+    /// seconds the server asked us to wait before trying again.
+    case rateLimited(retryAfter: TimeInterval?)
     case decodeFailed
+}
+
+public enum RetryAfter {
+    /// Parse an HTTP `Retry-After` header value. The spec allows either a
+    /// delta in whole seconds ("120") or an HTTP date; Anthropic sends the
+    /// former, so we honor seconds and ignore anything non-positive or unparsable.
+    public static func seconds(from header: String?) -> TimeInterval? {
+        guard let raw = header?.trimmingCharacters(in: .whitespaces),
+              let value = TimeInterval(raw), value > 0 else { return nil }
+        return value
+    }
 }
 
 public enum UsageDecoder {
@@ -128,6 +142,12 @@ public struct UsageFetcher {
             }
             guard let http = response as? HTTPURLResponse else {
                 box.set(.failure(.network("not an HTTP response")))
+                return
+            }
+            if http.statusCode == 429 || http.statusCode == 529 {
+                let retryAfter = RetryAfter.seconds(
+                    from: http.value(forHTTPHeaderField: "Retry-After"))
+                box.set(.failure(.rateLimited(retryAfter: retryAfter)))
                 return
             }
             guard http.statusCode == 200 else {

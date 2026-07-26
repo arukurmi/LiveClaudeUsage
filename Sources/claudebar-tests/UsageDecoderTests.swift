@@ -34,4 +34,12 @@ func runUsageDecoderTests() {
                 "sk-ant-oat01-abc", "token extraction")
     expect(UsageDecoder.extractToken(fromKeychainJSON: Data("{}".utf8)) == nil,
            "empty keychain JSON gives nil token")
+
+    expectEqual(RetryAfter.seconds(from: "120"), 120, "plain-seconds Retry-After")
+    expectEqual(RetryAfter.seconds(from: "  30 "), 30, "whitespace is trimmed")
+    expect(RetryAfter.seconds(from: nil) == nil, "missing header is nil")
+    expect(RetryAfter.seconds(from: "0") == nil, "non-positive delay is ignored")
+    expect(RetryAfter.seconds(from: "-5") == nil, "negative delay is ignored")
+    expect(RetryAfter.seconds(from: "Wed, 21 Oct 2026 07:28:00 GMT") == nil,
+           "HTTP-date form is not treated as seconds")
 }

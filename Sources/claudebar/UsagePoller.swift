@@ -10,6 +10,9 @@ final class UsagePoller {
     private var lastGoodPercent: Double?
     private var lastResetsAt: Date?
     private var consecutiveFailures = 0
+    /// When the server sent a Retry-After, the next poll waits at least this
+    /// long regardless of the computed backoff. Cleared after it's consumed.
+    private var serverRetryAfter: TimeInterval?
     private var inFlight = false
     private var watchdog: Timer?
     /// Latest moment by which the next tick should have started; the watchdog
@@ -99,8 +102,11 @@ final class UsagePoller {
                     defaults.set(snapshot.resetsAt?.timeIntervalSince1970 ?? 0,
                                  forKey: Self.lastResetsAtKey)
                     self.onUpdate(.usage(percent: snapshot.percent, resetsAt: snapshot.resetsAt))
-                case .failure:
+                case .failure(let error):
                     self.consecutiveFailures += 1
+                    if case .rateLimited(let retryAfter) = error {
+                        self.serverRetryAfter = retryAfter
+                    }
                     if let percent = self.lastGoodPercent {
                         self.onUpdate(.stale(percent: percent, resetsAt: self.lastResetsAt))
                     } else {
@@ -113,8 +119,15 @@ final class UsagePoller {
     }
 
     private func scheduleNext() {
-        let delay = PollBackoff.jitteredDelay(interval: interval,
+        var delay = PollBackoff.jitteredDelay(interval: interval,
                                               consecutiveFailures: consecutiveFailures)
+        // A server that explicitly asked us to wait wins over our own backoff,
+        // but never shrinks a longer computed delay. Capped at the backoff
+        // ceiling so a hostile header can't park the bar for hours.
+        if let retryAfter = serverRetryAfter {
+            delay = max(delay, min(retryAfter, PollBackoff.maxDelay))
+            serverRetryAfter = nil
+        }
         nextTickDeadline = Date().addingTimeInterval(delay + 60)
         // .common mode: default-mode timers stall while the run loop tracks
         // mouse events, which could hold a tick back indefinitely.
