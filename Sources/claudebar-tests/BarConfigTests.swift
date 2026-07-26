@@ -29,6 +29,20 @@ func runBarConfigTests() {
     expectEqual(BarConfig.load(from: tempFile("{oops")), .default,
                 "malformed JSON gives defaults")
 
+    // A threshold with an unparsable color is dropped; the valid one survives.
+    let mixedColors = BarConfig.load(from: tempFile("""
+        {"thresholds": [{"upTo": 50, "color": "not-a-hex", "emoji": "😊"},
+                        {"upTo": 100, "color": "#FF3B30", "emoji": "🚨"}]}
+        """))
+    expectEqual(mixedColors.thresholds.count, 1, "threshold with bad color is dropped")
+    expectEqual(mixedColors.thresholds.first?.color, "#FF3B30", "valid-color threshold kept")
+    // If every threshold has a bad color we fall back to the defaults rather
+    // than leaving the bar with no color table at all.
+    let allBad = BarConfig.load(from: tempFile(
+        #"{"thresholds": [{"upTo": 100, "color": "xyz", "emoji": "🚨"}]}"#))
+    expectEqual(allBad.thresholds, BarConfig.default.thresholds,
+                "all-invalid colors fall back to defaults")
+
     expect(BarConfig.default.showResetTime, "reset time shown by default")
     expect(!BarConfig.load(from: tempFile(#"{"showResetTime": false}"#)).showResetTime,
            "showResetTime can be disabled")

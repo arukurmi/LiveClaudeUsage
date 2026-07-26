@@ -69,6 +69,9 @@ public struct BarConfig: Equatable {
         if side != "left" && side != "right" { side = Self.default.side }
         if !(widthPx > 0 && widthPx <= 40) { widthPx = Self.default.widthPx }
         if !(pollIntervalSeconds >= 5) { pollIntervalSeconds = Self.default.pollIntervalSeconds }
+        // Drop thresholds whose color can't be parsed — otherwise the renderer
+        // silently falls back to red and the whole bar reads "almost out".
+        thresholds = thresholds.filter { HexColor.rgb($0.color) != nil }
         if thresholds.isEmpty { thresholds = Self.default.thresholds }
         thresholds.sort { $0.upTo < $1.upTo }
     }
