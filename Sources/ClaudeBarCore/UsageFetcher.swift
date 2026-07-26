@@ -99,8 +99,18 @@ public struct KeychainCLITokenProvider: TokenProvider {
         let stdout = Pipe()
         process.standardOutput = stdout
         process.standardError = Pipe()
+
+        let exited = DispatchSemaphore(value: 0)
+        process.terminationHandler = { _ in exited.signal() }
         do { try process.run() } catch { throw FetchError.tokenUnavailable }
-        process.waitUntilExit()
+        // A locked keychain can make `security` block on a GUI unlock prompt
+        // indefinitely; without a bound that stalls the whole poll loop. Give it
+        // 10s, then kill it and report the token as unavailable. Read stdout
+        // only after exit — the output is tiny, so the pipe buffer never fills.
+        if exited.wait(timeout: .now() + 10) == .timedOut {
+            process.terminate()
+            throw FetchError.tokenUnavailable
+        }
         guard process.terminationStatus == 0 else { throw FetchError.tokenUnavailable }
         let data = stdout.fileHandleForReading.readDataToEndOfFile()
         guard let token = UsageDecoder.extractToken(fromKeychainJSON: data) else {
