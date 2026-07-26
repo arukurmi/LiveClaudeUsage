@@ -114,10 +114,23 @@ public struct UsageFetcher {
     private let tokenProvider: TokenProvider
     private let session: URLSession
 
+    /// A session that keeps nothing on disk: the usage request carries a bearer
+    /// token and the response echoes account state, neither of which belong in
+    /// the shared URL cache or cookie jar. Ephemeral config holds all of that in
+    /// memory and drops it when the process exits.
+    public static func makePrivateSession() -> URLSession {
+        let config = URLSessionConfiguration.ephemeral
+        config.urlCache = nil
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        config.httpCookieStorage = nil
+        config.httpShouldSetCookies = false
+        return URLSession(configuration: config)
+    }
+
     public init(tokenProvider: TokenProvider = KeychainCLITokenProvider(),
-                session: URLSession = .shared) {
+                session: URLSession? = nil) {
         self.tokenProvider = tokenProvider
-        self.session = session
+        self.session = session ?? UsageFetcher.makePrivateSession()
     }
 
     /// Synchronous; call off the main thread.
@@ -129,6 +142,7 @@ public struct UsageFetcher {
         // A response that hasn't arrived in 15s isn't coming; without this the
         // session default (60s between bytes) can stretch a dead request for minutes.
         request.timeoutInterval = 15
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
 
