@@ -115,10 +115,14 @@ Native Swift + AppKit. One ~200KB binary. Zero dependencies. Near-zero CPU.
 ### ⏱️ Polling that can't silently die
 
 - Every request has a hard timeout (15s request, 30s overall) — a hung
-  connection can never freeze the poll loop.
+  connection can never freeze the poll loop. The keychain lookup is bounded
+  too, so a locked-keychain prompt can't stall it either.
 - A watchdog restarts polling if a tick is ever missed, whatever the cause.
 - Failures (offline, rate limits) back off exponentially up to 10 minutes,
   showing the last known value dimmed instead of hiding the bar.
+- Rate limits are respected properly: a `429`/`529` with a `Retry-After`
+  header waits at least that long, and every backoff carries ±25% jitter so
+  many clients don't retry in lockstep.
 - On wake from sleep, screen wake, or session unlock the backoff resets and
   the bar refreshes within seconds.
 - The app opts out of App Nap (while still allowing system sleep), so ticks
