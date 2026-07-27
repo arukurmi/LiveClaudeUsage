@@ -10,9 +10,10 @@ final class UsagePoller {
     private var lastGoodPercent: Double?
     private var lastResetsAt: Date?
     private var consecutiveFailures = 0
-    /// When the server sent a Retry-After, the next poll waits at least this
-    /// long regardless of the computed backoff. Cleared after it's consumed.
-    private var serverRetryAfter: TimeInterval?
+    /// Absolute moment before which the server (via Retry-After) asked us not to
+    /// poll again. Honored even across wake/unlock refreshes so we never poll
+    /// inside a window the server explicitly closed.
+    private var rateLimitedUntil: Date?
     private var inFlight = false
     private var watchdog: Timer?
     /// Latest moment by which the next tick should have started; the watchdog
@@ -58,8 +59,10 @@ final class UsagePoller {
         }
     }
 
-    /// Forget accumulated backoff and fetch immediately.
+    /// Forget accumulated backoff and fetch immediately — unless the server
+    /// asked us to wait, in which case the pending timer for that window stands.
     private func refreshNow() {
+        if let until = rateLimitedUntil, until > Date() { return }
         consecutiveFailures = 0
         timer?.invalidate()
         tick()
@@ -94,6 +97,7 @@ final class UsagePoller {
                 switch result {
                 case .success(let snapshot):
                     self.consecutiveFailures = 0
+                    self.rateLimitedUntil = nil
                     self.lastGoodPercent = snapshot.percent
                     self.lastResetsAt = snapshot.resetsAt
                     let defaults = UserDefaults.standard
@@ -104,8 +108,9 @@ final class UsagePoller {
                     self.onUpdate(.usage(percent: snapshot.percent, resetsAt: snapshot.resetsAt))
                 case .failure(let error):
                     self.consecutiveFailures += 1
-                    if case .rateLimited(let retryAfter) = error {
-                        self.serverRetryAfter = retryAfter
+                    if case .rateLimited(let retryAfter) = error, let retryAfter {
+                        self.rateLimitedUntil = Date().addingTimeInterval(
+                            min(retryAfter, PollBackoff.maxDelay))
                     }
                     if let percent = self.lastGoodPercent {
                         self.onUpdate(.stale(percent: percent, resetsAt: self.lastResetsAt))
@@ -122,11 +127,10 @@ final class UsagePoller {
         var delay = PollBackoff.jitteredDelay(interval: interval,
                                               consecutiveFailures: consecutiveFailures)
         // A server that explicitly asked us to wait wins over our own backoff,
-        // but never shrinks a longer computed delay. Capped at the backoff
-        // ceiling so a hostile header can't park the bar for hours.
-        if let retryAfter = serverRetryAfter {
-            delay = max(delay, min(retryAfter, PollBackoff.maxDelay))
-            serverRetryAfter = nil
+        // but never shrinks a longer computed delay. The window is already
+        // capped at the backoff ceiling when it's set.
+        if let until = rateLimitedUntil {
+            delay = max(delay, until.timeIntervalSinceNow)
         }
         nextTickDeadline = Date().addingTimeInterval(delay + 60)
         // .common mode: default-mode timers stall while the run loop tracks
