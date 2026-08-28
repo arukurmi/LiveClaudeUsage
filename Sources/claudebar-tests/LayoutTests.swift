@@ -21,4 +21,16 @@ func runLayoutTests() {
     expect(!label(25 * 3600).contains("in"), "past a day is not phrased as a countdown")
     // 1_700_000_000 is Tue 14 Nov 2023 22:13:20 UTC; +4 days lands on Saturday.
     expectEqual(label(4 * 86_400), "Resets Sat 10:13 PM", "weekday and time")
+
+    // The tab grows by exactly one item's worth per limit, and never collapses
+    // when there is nothing to show.
+    let one = RailMetrics.railBodySize(itemCount: 1)
+    let two = RailMetrics.railBodySize(itemCount: 2)
+    let three = RailMetrics.railBodySize(itemCount: 3)
+    expectEqual(two.height - one.height, RailMetrics.itemHeight + RailMetrics.itemSpacing,
+                "second ring adds one item plus a gap")
+    expectEqual(three.height - two.height, two.height - one.height, "growth stays linear")
+    expectEqual(RailMetrics.railBodySize(itemCount: 0), one,
+                "an empty tab still has room for one item")
+    expectEqual(one.width, two.width, "width does not depend on the number of rings")
 }
