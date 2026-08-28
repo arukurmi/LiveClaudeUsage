@@ -20,7 +20,7 @@ public struct BarConfig: Equatable {
     public var thresholds: [Threshold]
 
     public static let `default` = BarConfig(
-        side: "left",
+        side: "right",
         pollIntervalSeconds: 120,
         thresholds: [
             Threshold(upTo: 50, color: "#34C759"),

@@ -20,7 +20,7 @@ func runBarConfigTests() {
                 "partial file keeps default thresholds")
 
     let invalid = BarConfig.load(from: tempFile(#"{"side": "top", "pollIntervalSeconds": 1}"#))
-    expectEqual(invalid.side, "left", "invalid side falls back")
+    expectEqual(invalid.side, "right", "invalid side falls back")
     expectEqual(invalid.pollIntervalSeconds, 120, "too-small poll interval falls back")
 
     expectEqual(BarConfig.load(from: tempFile("{oops")), .default,
