@@ -61,3 +61,30 @@ enum ScreenGeometry {
             + RailMetrics.popoverTopInset
     }
 }
+
+/// Borderless, non-activating, above everything, on every Space — the same
+/// citizenship the menu bar itself has.
+class ChromelessPanel: NSPanel {
+    init(contentRect: NSRect, interactive: Bool) {
+        super.init(contentRect: contentRect,
+                   styleMask: [.borderless, .nonactivatingPanel],
+                   backing: .buffered, defer: false)
+        isOpaque = false
+        backgroundColor = .clear
+        hasShadow = true
+        level = .statusBar
+        hidesOnDeactivate = false
+        isMovable = false
+        becomesKeyOnlyIfNeeded = true
+        ignoresMouseEvents = !interactive
+        collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
+    }
+
+    override var canBecomeKey: Bool { false }
+
+    func place(_ frame: NSRect) {
+        guard frame != self.frame else { return }
+        setFrame(frame, display: true)
+        invalidateShadow()
+    }
+}
