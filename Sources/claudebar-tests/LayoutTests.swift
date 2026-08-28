@@ -33,4 +33,25 @@ func runLayoutTests() {
     expectEqual(RailMetrics.railBodySize(itemCount: 0), one,
                 "an empty tab still has room for one item")
     expectEqual(one.width, two.width, "width does not depend on the number of rings")
+
+    // Every ring must sit inside the tab, padding included.
+    for count in 1...4 {
+        let size = RailMetrics.railBodySize(itemCount: count)
+        let lastTop = RailMetrics.itemTopOffset(index: count - 1)
+        expect(lastTop + RailMetrics.itemHeight <= size.height - RailMetrics.railPaddingBottom + 0.01,
+               "\(count) rings fit inside the tab")
+        expect(RailMetrics.itemTopOffset(index: 0) >= RailMetrics.railPaddingTop,
+               "first ring clears the top padding")
+    }
+
+    // Same contract for the panel's rows.
+    for count in 1...4 {
+        let size = RailMetrics.popoverBodySize(rowCount: count)
+        let lastTop = RailMetrics.popoverRowTopOffset(index: count - 1)
+        expect(lastTop + RailMetrics.popoverRowHeight <= size.height - RailMetrics.popoverPadding + 0.01,
+               "\(count) rows fit inside the panel")
+    }
+    expectEqual(RailMetrics.popoverBodySize(rowCount: 0),
+                RailMetrics.popoverBodySize(rowCount: 1),
+                "an empty panel keeps one row of height for its message")
 }
