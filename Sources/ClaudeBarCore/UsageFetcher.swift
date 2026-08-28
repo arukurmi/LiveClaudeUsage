@@ -23,19 +23,39 @@ public enum RetryAfter {
 
 public enum UsageDecoder {
     private struct Payload: Decodable {
-        struct FiveHour: Decodable {
+        struct Window: Decodable {
             let utilization: Double
             let resets_at: String?
         }
-        let five_hour: FiveHour
+        struct Limit: Decodable {
+            let kind: String?
+            let percent: Double?
+            let resets_at: String?
+        }
+        let five_hour: Window
+        let seven_day: Window?
+        let limits: [Limit]?
     }
 
     public static func decode(_ data: Data) -> Result<UsageSnapshot, FetchError> {
         guard let payload = try? JSONDecoder().decode(Payload.self, from: data) else {
             return .failure(.decodeFailed)
         }
-        let resetsAt = payload.five_hour.resets_at.flatMap(parseISO8601)
-        return .success(UsageSnapshot(percent: payload.five_hour.utilization, resetsAt: resetsAt))
+        return .success(UsageSnapshot(
+            percent: payload.five_hour.utilization,
+            resetsAt: payload.five_hour.resets_at.flatMap(parseISO8601),
+            limits: limits(from: payload)))
+    }
+
+    /// A limit missing its kind or percentage is dropped rather than rendered
+    /// as an unnamed 0%.
+    private static func limits(from payload: Payload) -> [UsageLimit] {
+        (payload.limits ?? []).compactMap { limit in
+            guard let kind = limit.kind, let percent = limit.percent else { return nil }
+            return UsageLimit(kind: kind,
+                              percent: percent,
+                              resetsAt: limit.resets_at.flatMap(parseISO8601))
+        }
     }
 
     public static func parseISO8601(_ string: String) -> Date? {
