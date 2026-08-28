@@ -161,3 +161,24 @@ enum Glyph {
         return layer
     }
 }
+
+enum TextLayerFactory {
+    static func make(scale: CGFloat, alignment: CATextLayerAlignmentMode = .left) -> CATextLayer {
+        let layer = CATextLayer()
+        layer.contentsScale = scale
+        layer.alignmentMode = alignment
+        layer.truncationMode = .end
+        layer.isWrapped = false
+        return layer
+    }
+
+    static func attributed(_ string: String, size: CGFloat,
+                           weight: NSFont.Weight, color: NSColor,
+                           tracking: CGFloat = 0) -> NSAttributedString {
+        NSAttributedString(string: string, attributes: [
+            .font: NSFont.systemFont(ofSize: size, weight: weight),
+            .foregroundColor: color,
+            .kern: tracking,
+        ])
+    }
+}
