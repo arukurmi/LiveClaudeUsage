@@ -55,3 +55,35 @@ public enum ResetTimeFormatter {
         return formatter.string(from: date)
     }
 }
+
+public enum ResetLabel {
+    /// The reset moment as a person would say it: relative while it is close
+    /// enough to plan around ("Resets in 51 min"), absolute once it is not
+    /// ("Resets Thu 12:00 AM"). Session limits land in the first form and
+    /// weekly limits in the second, without either having to ask for it.
+    public static func string(for date: Date,
+                              now: Date = Date(),
+                              timeZone: TimeZone = .current,
+                              locale: Locale = Locale(identifier: "en_US_POSIX")) -> String {
+        let seconds = date.timeIntervalSince(now)
+        if seconds <= 0 { return "Resetting now" }
+        if seconds < 60 { return "Resets in under a min" }
+
+        let totalMinutes = Int(seconds / 60)
+        if totalMinutes < 60 { return "Resets in \(totalMinutes) min" }
+
+        if seconds < 24 * 3600 {
+            let hours = totalMinutes / 60
+            let minutes = totalMinutes % 60
+            return minutes == 0
+                ? "Resets in \(hours) hr"
+                : "Resets in \(hours) hr \(minutes) min"
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.timeZone = timeZone
+        formatter.dateFormat = "EEE h:mm a"
+        return "Resets \(formatter.string(from: date))"
+    }
+}
