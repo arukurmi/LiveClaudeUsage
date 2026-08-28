@@ -54,4 +54,15 @@ func runLayoutTests() {
     expectEqual(RailMetrics.popoverBodySize(rowCount: 0),
                 RailMetrics.popoverBodySize(rowCount: 1),
                 "an empty panel keeps one row of height for its message")
+
+    // The beak has to land on the straight part of the panel edge, clear of the
+    // rounded corners, or it renders as a dent in a corner instead of an arrow.
+    for count in 1...4 {
+        let height = RailMetrics.popoverBodySize(rowCount: count).height
+        let beak = height - RailMetrics.railPaddingTop - RailMetrics.ringDiameter / 2
+            + RailMetrics.popoverTopInset
+        let margin = RailMetrics.popoverCornerRadius + RailMetrics.beakHeight / 2
+        expect(beak >= margin && beak <= height - margin,
+               "beak clears the corners with \(count) rows (beak \(beak), height \(height))")
+    }
 }
