@@ -141,12 +141,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popoverWindow.place(popoverFrame)
         popoverView.setBeakCenterY(ScreenGeometry.beakCenterY(popoverHeight: popoverFrame.height))
         popoverView.needsLayout = true
-        railWindow.orderFrontRegardless()
+
+        // The tab belongs to the menu bar, so it leaves with it — full-screen
+        // video gets the whole screen back without the user hiding anything.
+        let shouldShow = ScreenGeometry.menuBarIsVisible
+        if shouldShow {
+            if !railWindow.isVisible { railWindow.orderFrontRegardless() }
+            railWindow.orderFrontRegardless()
+        } else {
+            if railWindow.isVisible { railWindow.orderOut(nil) }
+            setPopoverVisible(false, animated: false)
+        }
     }
 
     // MARK: - Hover
 
     private func updateHover() {
+        guard railWindow.isVisible else {
+            setPopoverVisible(false, animated: true)
+            return
+        }
         let mouse = NSEvent.mouseLocation
         // Union of the two windows, so crossing the gap between them doesn't
         // read as leaving.
