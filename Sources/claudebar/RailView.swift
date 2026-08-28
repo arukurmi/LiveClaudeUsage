@@ -56,6 +56,28 @@ final class RailView: NSView {
             rebuildRings()
         }
         applyState(animated: true)
+        updateAccessibility()
+    }
+
+    /// The tab is a status readout. Without this VoiceOver reaches it and finds
+    /// an unlabelled group of circles, which is worse than it being invisible.
+    private func updateAccessibility() {
+        setAccessibilityElement(true)
+        setAccessibilityRole(.group)
+        setAccessibilityLabel("Claude usage")
+        guard !limits.isEmpty else {
+            setAccessibilityValue("No usage data yet")
+            return
+        }
+        let now = Date()
+        let spoken = limits.map { limit -> String in
+            var text = "\(limit.title), \(Int(limit.percent.rounded())) percent used"
+            if let resetsAt = limit.resetsAt {
+                text += ", \(ResetLabel.string(for: resetsAt, now: now).lowercased())"
+            }
+            return text
+        }
+        setAccessibilityValue(spoken.joined(separator: ". "))
     }
 
     override func layout() {
@@ -126,7 +148,7 @@ final class RailView: NSView {
     private func applyState(animated: Bool) {
         guard bounds.width > 0, bounds.height > 0 else { return }
         CATransaction.begin()
-        CATransaction.setAnimationDuration(animated ? 0.55 : 0)
+        CATransaction.setAnimationDuration(animated ? Motion.duration(0.55) : 0)
         if !animated { CATransaction.setDisableActions(true) }
 
         background.frame = bounds

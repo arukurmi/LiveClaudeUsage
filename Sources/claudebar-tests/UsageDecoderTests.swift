@@ -100,4 +100,20 @@ func runUsageDecoderTests() {
     expect(RetryAfter.seconds(from: "-5") == nil, "negative delay is ignored")
     expect(RetryAfter.seconds(from: "Wed, 21 Oct 2026 07:28:00 GMT") == nil,
            "HTTP-date form is not treated as seconds")
+
+    // The poller caches a snapshot by encoding it whole, so a round trip has to
+    // preserve every limit — including one the server gave no reset time for.
+    let stamp = Date(timeIntervalSince1970: 1_700_000_000)
+    let cached = UsageSnapshot(percent: 24, resetsAt: stamp, limits: [
+        UsageLimit(kind: "session", percent: 24, resetsAt: stamp),
+        UsageLimit(kind: "weekly_opus", percent: 61, resetsAt: nil),
+    ])
+    if let data = try? JSONEncoder().encode(cached),
+       let restored = try? JSONDecoder().decode(UsageSnapshot.self, from: data) {
+        expectEqual(restored, cached, "snapshot survives the cache round trip")
+        expectEqual(restored.limits.count, 2, "every limit is restored, not just the session")
+        expect(restored.limits[1].resetsAt == nil, "a limit without a reset time stays nil")
+    } else {
+        expect(false, "snapshot should round-trip through JSON")
+    }
 }

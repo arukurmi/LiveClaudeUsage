@@ -7,11 +7,13 @@ let arguments = CommandLine.arguments
 if arguments.contains("--once") {
     switch UsageFetcher().fetch() {
     case .success(let snapshot):
-        var line = "session: \(snapshot.percent)%"
-        if let resetsAt = snapshot.resetsAt {
-            line += " (resets \(resetsAt))"
+        for limit in snapshot.limits {
+            var line = "\(limit.title): \(Int(limit.percent.rounded()))%"
+            if let resetsAt = limit.resetsAt {
+                line += "  \(ResetLabel.string(for: resetsAt))"
+            }
+            print(line)
         }
-        print(line)
         exit(0)
     case .failure(let error):
         FileHandle.standardError.write(Data("error: \(error)\n".utf8))

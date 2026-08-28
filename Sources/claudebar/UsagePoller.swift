@@ -7,8 +7,7 @@ final class UsagePoller {
     private let onUpdate: (DisplayState) -> Void
     private let fetcher = UsageFetcher()
     private var timer: Timer?
-    private var lastGoodPercent: Double?
-    private var lastResetsAt: Date?
+    private var lastGood: UsageSnapshot?
     private var consecutiveFailures = 0
     /// Absolute moment before which the server (via Retry-After) asked us not to
     /// poll again. Honored even across wake/unlock refreshes so we never poll
@@ -20,29 +19,25 @@ final class UsagePoller {
     /// force-restarts polling past this point.
     private var nextTickDeadline = Date.distantFuture
 
-    private static let lastGoodKey = "lastGoodPercent"
+    private static let lastGoodKey = "lastGoodSnapshot"
     private static let lastGoodAtKey = "lastGoodAt"
-    private static let lastResetsAtKey = "lastResetsAt"
 
     init(intervalSeconds: TimeInterval, onUpdate: @escaping (DisplayState) -> Void) {
         self.interval = intervalSeconds
         self.onUpdate = onUpdate
-        // Survive restarts: a value from the last hour beats a gray "no data" bar.
+        // Survive restarts: a reading from the last hour beats an empty rail.
         let defaults = UserDefaults.standard
         let savedAt = defaults.double(forKey: Self.lastGoodAtKey)
-        if savedAt > 0, Date().timeIntervalSince1970 - savedAt < 3600 {
-            lastGoodPercent = defaults.double(forKey: Self.lastGoodKey)
-            let savedReset = defaults.double(forKey: Self.lastResetsAtKey)
-            // Only a reset time still in the future is worth showing.
-            if savedReset > Date().timeIntervalSince1970 {
-                lastResetsAt = Date(timeIntervalSince1970: savedReset)
-            }
+        if savedAt > 0, Date().timeIntervalSince1970 - savedAt < 3600,
+           let data = defaults.data(forKey: Self.lastGoodKey),
+           let snapshot = try? JSONDecoder().decode(UsageSnapshot.self, from: data) {
+            lastGood = snapshot
         }
     }
 
     func start() {
-        if let percent = lastGoodPercent {
-            onUpdate(.stale(UsageSnapshot(percent: percent, resetsAt: lastResetsAt)))
+        if let lastGood {
+            onUpdate(.stale(lastGood))
         }
         tick()
         startWatchdog()
@@ -61,7 +56,8 @@ final class UsagePoller {
 
     /// Forget accumulated backoff and fetch immediately — unless the server
     /// asked us to wait, in which case the pending timer for that window stands.
-    private func refreshNow() {
+    /// Also driven by the rail's "Refresh now" menu item.
+    func refreshNow() {
         if let until = rateLimitedUntil, until > Date() { return }
         consecutiveFailures = 0
         timer?.invalidate()
@@ -98,13 +94,12 @@ final class UsagePoller {
                 case .success(let snapshot):
                     self.consecutiveFailures = 0
                     self.rateLimitedUntil = nil
-                    self.lastGoodPercent = snapshot.percent
-                    self.lastResetsAt = snapshot.resetsAt
+                    self.lastGood = snapshot
                     let defaults = UserDefaults.standard
-                    defaults.set(snapshot.percent, forKey: Self.lastGoodKey)
-                    defaults.set(Date().timeIntervalSince1970, forKey: Self.lastGoodAtKey)
-                    defaults.set(snapshot.resetsAt?.timeIntervalSince1970 ?? 0,
-                                 forKey: Self.lastResetsAtKey)
+                    if let data = try? JSONEncoder().encode(snapshot) {
+                        defaults.set(data, forKey: Self.lastGoodKey)
+                        defaults.set(Date().timeIntervalSince1970, forKey: Self.lastGoodAtKey)
+                    }
                     self.onUpdate(.usage(snapshot))
                 case .failure(let error):
                     self.consecutiveFailures += 1
@@ -112,8 +107,8 @@ final class UsagePoller {
                         self.rateLimitedUntil = Date().addingTimeInterval(
                             min(retryAfter, PollBackoff.maxDelay))
                     }
-                    if let percent = self.lastGoodPercent {
-                        self.onUpdate(.stale(UsageSnapshot(percent: percent, resetsAt: self.lastResetsAt)))
+                    if let lastGood = self.lastGood {
+                        self.onUpdate(.stale(lastGood))
                     } else {
                         self.onUpdate(.error)
                     }

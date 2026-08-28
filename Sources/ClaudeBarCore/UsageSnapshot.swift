@@ -45,17 +45,6 @@ public struct UsageSnapshot: Codable, Equatable {
     }
 }
 
-public enum ResetTimeFormatter {
-    /// Short local-time string that fits a rotated label inside the bar, e.g. "4:30PM".
-    public static func string(from date: Date, timeZone: TimeZone = .current) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = timeZone
-        formatter.dateFormat = "h:mma"
-        return formatter.string(from: date)
-    }
-}
-
 public enum ResetLabel {
     /// The reset moment as a person would say it: relative while it is close
     /// enough to plan around ("Resets in 51 min"), absolute once it is not
