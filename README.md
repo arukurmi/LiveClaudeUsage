@@ -121,7 +121,7 @@ monitors connected.
 3. 🖥️ Renders it as CoreAnimation layers in two borderless, non-activating
    `NSPanel`s at status-bar level, visible on every Space.
 
-Native Swift + AppKit. One ~200KB binary. Zero dependencies. Near-zero CPU.
+Native Swift + AppKit. One ~450KB binary. Zero dependencies. Near-zero CPU.
 
 ### ⏱️ Polling that can't silently die
 
