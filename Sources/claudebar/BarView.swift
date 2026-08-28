@@ -1,13 +1,6 @@
 import AppKit
 import ClaudeBarCore
 
-enum DisplayState: Equatable {
-    case usage(percent: Double, resetsAt: Date?)
-    /// Fetch failing, but we have a last known value — show it dimmed with a warning.
-    case stale(percent: Double, resetsAt: Date?)
-    case error
-}
-
 final class BarView: NSView {
     private let config: BarConfig
     private let trackLayer = CALayer()
@@ -17,7 +10,7 @@ final class BarView: NSView {
     private let hideChip = CALayer()
     private let hideGlyph = CATextLayer()
     private let emojiField = NSTextField(labelWithString: "")
-    private var state: DisplayState = .usage(percent: 0, resetsAt: nil)
+    private var state: DisplayState = .usage(UsageSnapshot(percent: 0, resetsAt: nil))
     private var hovering = false
     private var collapsed = false
 
@@ -109,9 +102,8 @@ final class BarView: NSView {
 
     private var currentColor: CGColor {
         switch state {
-        case .usage(let percent, _), .stale(let percent, _):
-            let clamped = min(max(percent, 0), 100)
-            let rgb = HexColor.rgb(config.threshold(forPercent: clamped).color) ?? (r: 1, g: 0, b: 0)
+        case .usage(let snapshot), .stale(let snapshot):
+            let rgb = config.color(forPercent: snapshot.percent)
             return CGColor(red: rgb.r, green: rgb.g, blue: rgb.b, alpha: 0.9)
         case .error:
             return NSColor.systemGray.withAlphaComponent(0.8).cgColor
@@ -144,8 +136,10 @@ final class BarView: NSView {
         trackLayer.frame = CGRect(x: barX, y: 0, width: barWidth, height: bounds.height)
 
         switch state {
-        case .usage(let percent, let resetsAt), .stale(let percent, let resetsAt):
-            let isStale = { if case .stale = state { return true } else { return false } }()
+        case .usage(let snapshot), .stale(let snapshot):
+            let percent = snapshot.percent
+            let resetsAt = snapshot.resetsAt
+            let isStale = state.isStale
             let clamped = min(max(percent, 0), 100)
             let threshold = config.threshold(forPercent: clamped)
             // Stale data stays fully visible — a minutes-old percentage is still

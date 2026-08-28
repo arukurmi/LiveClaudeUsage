@@ -78,7 +78,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let fixedIndex = CommandLine.arguments.firstIndex(of: "--fixed"),
            fixedIndex + 1 < CommandLine.arguments.count,
            let fixedPercent = Double(CommandLine.arguments[fixedIndex + 1]) {
-            barView.render(.usage(percent: fixedPercent, resetsAt: Date().addingTimeInterval(2.5 * 3600)))
+            barView.render(.usage(UsageSnapshot(percent: fixedPercent,
+                                                resetsAt: Date().addingTimeInterval(2.5 * 3600))))
             // Visual-test hook: freeze the hover state so the hide chip can be screenshotted.
             if CommandLine.arguments.contains("--hover") {
                 hoverTimer?.invalidate()
@@ -93,8 +94,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.demoPercent += self.demoRising ? 1 : -1
                 if self.demoPercent >= 100 { self.demoRising = false }
                 if self.demoPercent <= 0 { self.demoRising = true }
-                self.barView.render(.usage(percent: self.demoPercent,
-                                           resetsAt: Date().addingTimeInterval(2.5 * 3600)))
+                self.barView.render(.usage(UsageSnapshot(
+                    percent: self.demoPercent,
+                    resetsAt: Date().addingTimeInterval(2.5 * 3600))))
             }
         } else {
             poller = UsagePoller(intervalSeconds: config.pollIntervalSeconds) { [weak self] state in
