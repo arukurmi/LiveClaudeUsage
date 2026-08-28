@@ -1,25 +1,5 @@
 import Foundation
 
-public struct UsageSnapshot: Equatable {
-    public let percent: Double
-    public let resetsAt: Date?
-    public init(percent: Double, resetsAt: Date?) {
-        self.percent = percent
-        self.resetsAt = resetsAt
-    }
-}
-
-public enum ResetTimeFormatter {
-    /// Short local-time string that fits a rotated label inside the bar, e.g. "4:30PM".
-    public static func string(from date: Date, timeZone: TimeZone = .current) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = timeZone
-        formatter.dateFormat = "h:mma"
-        return formatter.string(from: date)
-    }
-}
-
 public enum FetchError: Error, Equatable {
     case tokenUnavailable
     case network(String)
@@ -43,19 +23,53 @@ public enum RetryAfter {
 
 public enum UsageDecoder {
     private struct Payload: Decodable {
-        struct FiveHour: Decodable {
+        struct Window: Decodable {
             let utilization: Double
             let resets_at: String?
         }
-        let five_hour: FiveHour
+        struct Limit: Decodable {
+            let kind: String?
+            let percent: Double?
+            let resets_at: String?
+        }
+        let five_hour: Window
+        let seven_day: Window?
+        let limits: [Limit]?
     }
 
     public static func decode(_ data: Data) -> Result<UsageSnapshot, FetchError> {
         guard let payload = try? JSONDecoder().decode(Payload.self, from: data) else {
             return .failure(.decodeFailed)
         }
-        let resetsAt = payload.five_hour.resets_at.flatMap(parseISO8601)
-        return .success(UsageSnapshot(percent: payload.five_hour.utilization, resetsAt: resetsAt))
+        return .success(UsageSnapshot(
+            percent: payload.five_hour.utilization,
+            resetsAt: payload.five_hour.resets_at.flatMap(parseISO8601),
+            limits: limits(from: payload)))
+    }
+
+    /// The server's own array is the source of truth. Older responses without
+    /// it still carry the two windows we can name ourselves, so fall back to
+    /// those rather than handing the UI nothing to draw. A limit missing its
+    /// kind or percentage is dropped rather than rendered as an unnamed 0%.
+    private static func limits(from payload: Payload) -> [UsageLimit] {
+        if let limits = payload.limits, !limits.isEmpty {
+            let mapped = limits.compactMap { limit -> UsageLimit? in
+                guard let kind = limit.kind, let percent = limit.percent else { return nil }
+                return UsageLimit(kind: kind,
+                                  percent: percent,
+                                  resetsAt: limit.resets_at.flatMap(parseISO8601))
+            }
+            if !mapped.isEmpty { return mapped }
+        }
+        var fallback = [UsageLimit(kind: "session",
+                                   percent: payload.five_hour.utilization,
+                                   resetsAt: payload.five_hour.resets_at.flatMap(parseISO8601))]
+        if let weekly = payload.seven_day {
+            fallback.append(UsageLimit(kind: "weekly_all",
+                                       percent: weekly.utilization,
+                                       resetsAt: weekly.resets_at.flatMap(parseISO8601)))
+        }
+        return fallback
     }
 
     public static func parseISO8601(_ string: String) -> Date? {
