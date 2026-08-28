@@ -79,3 +79,17 @@ enum NotchShape {
         return path
     }
 }
+
+enum Palette {
+    static let surface = NSColor(calibratedWhite: 0.043, alpha: 1).cgColor
+    static let hairline = NSColor(calibratedWhite: 1, alpha: 0.09).cgColor
+    static let track = NSColor(calibratedWhite: 1, alpha: 0.13).cgColor
+    static let iconWell = NSColor(calibratedWhite: 1, alpha: 0.07).cgColor
+    static let primaryText = NSColor(calibratedWhite: 1, alpha: 0.96)
+    static let secondaryText = NSColor(calibratedWhite: 1, alpha: 0.46)
+    static let offline = NSColor(calibratedWhite: 1, alpha: 0.28)
+
+    static func cg(_ rgb: (r: Double, g: Double, b: Double), alpha: Double = 1) -> CGColor {
+        CGColor(red: rgb.r, green: rgb.g, blue: rgb.b, alpha: alpha)
+    }
+}
