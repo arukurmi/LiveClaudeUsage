@@ -42,7 +42,7 @@ final class UsagePoller {
 
     func start() {
         if let percent = lastGoodPercent {
-            onUpdate(.stale(percent: percent, resetsAt: lastResetsAt))
+            onUpdate(.stale(UsageSnapshot(percent: percent, resetsAt: lastResetsAt)))
         }
         tick()
         startWatchdog()
@@ -105,7 +105,7 @@ final class UsagePoller {
                     defaults.set(Date().timeIntervalSince1970, forKey: Self.lastGoodAtKey)
                     defaults.set(snapshot.resetsAt?.timeIntervalSince1970 ?? 0,
                                  forKey: Self.lastResetsAtKey)
-                    self.onUpdate(.usage(percent: snapshot.percent, resetsAt: snapshot.resetsAt))
+                    self.onUpdate(.usage(snapshot))
                 case .failure(let error):
                     self.consecutiveFailures += 1
                     if case .rateLimited(let retryAfter) = error, let retryAfter {
@@ -113,7 +113,7 @@ final class UsagePoller {
                             min(retryAfter, PollBackoff.maxDelay))
                     }
                     if let percent = self.lastGoodPercent {
-                        self.onUpdate(.stale(percent: percent, resetsAt: self.lastResetsAt))
+                        self.onUpdate(.stale(UsageSnapshot(percent: percent, resetsAt: self.lastResetsAt)))
                     } else {
                         self.onUpdate(.error)
                     }
