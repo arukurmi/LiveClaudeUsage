@@ -23,10 +23,9 @@ public struct BarConfig: Equatable {
         side: "right",
         pollIntervalSeconds: 120,
         thresholds: [
-            Threshold(upTo: 50, color: "#34C759"),
-            Threshold(upTo: 75, color: "#FFCC00"),
-            Threshold(upTo: 90, color: "#FF9500"),
-            Threshold(upTo: 100, color: "#FF3B30"),
+            Threshold(upTo: 40, color: "#3ADE79"),
+            Threshold(upTo: 70, color: "#E8F03B"),
+            Threshold(upTo: 100, color: "#FF4B22"),
         ]
     )
 

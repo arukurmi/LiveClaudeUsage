@@ -58,17 +58,17 @@ func runBarConfigTests() {
     expectEqual(ResetTimeFormatter.string(from: Date(timeIntervalSince1970: 59_400), timeZone: utc),
                 "4:30PM", "afternoon formats without leading zero")
 
-    // Tiers are now identified by colour rather than by the emoji that rode the
-    // old bar's fill line.
+    // The default ramp: green while there is room, yellow around half,
+    // red-orange once it is tight.
     let config = BarConfig.default
-    expectEqual(config.threshold(forPercent: 0).color, "#34C759", "0%")
-    expectEqual(config.threshold(forPercent: 50).color, "#34C759", "50% boundary")
-    expectEqual(config.threshold(forPercent: 50.1).color, "#FFCC00", "just past 50%")
-    expectEqual(config.threshold(forPercent: 75).color, "#FFCC00", "75% boundary")
-    expectEqual(config.threshold(forPercent: 90).color, "#FF9500", "90% boundary")
-    expectEqual(config.threshold(forPercent: 90.1).color, "#FF3B30", "just past 90%")
-    expectEqual(config.threshold(forPercent: 100).color, "#FF3B30", "100%")
-    expectEqual(config.threshold(forPercent: 250).color, "#FF3B30", "clamps above table")
+    expectEqual(config.threshold(forPercent: 0).color, "#3ADE79", "0%")
+    expectEqual(config.threshold(forPercent: 21).color, "#3ADE79", "21% still green")
+    expectEqual(config.threshold(forPercent: 40).color, "#3ADE79", "40% boundary")
+    expectEqual(config.threshold(forPercent: 52).color, "#E8F03B", "52% is yellow")
+    expectEqual(config.threshold(forPercent: 70).color, "#E8F03B", "70% boundary")
+    expectEqual(config.threshold(forPercent: 73).color, "#FF4B22", "73% is red-orange")
+    expectEqual(config.threshold(forPercent: 100).color, "#FF4B22", "100%")
+    expectEqual(config.threshold(forPercent: 250).color, "#FF4B22", "clamps above table")
 
     if let green = HexColor.rgb("#34C759") {
         expect(abs(green.r - Double(0x34) / 255.0) < 0.001, "hex r channel")
