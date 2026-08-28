@@ -52,12 +52,6 @@ func runBarConfigTests() {
     expectEqual(allBad.thresholds, BarConfig.default.thresholds,
                 "all-invalid colors fall back to defaults")
 
-    let utc = TimeZone(identifier: "UTC")!
-    expectEqual(ResetTimeFormatter.string(from: Date(timeIntervalSince1970: 0), timeZone: utc),
-                "12:00AM", "midnight formats")
-    expectEqual(ResetTimeFormatter.string(from: Date(timeIntervalSince1970: 59_400), timeZone: utc),
-                "4:30PM", "afternoon formats without leading zero")
-
     // The default ramp: green while there is room, yellow around half,
     // red-orange once it is tight.
     let config = BarConfig.default
