@@ -93,3 +93,71 @@ enum Palette {
         CGColor(red: rgb.r, green: rgb.g, blue: rgb.b, alpha: alpha)
     }
 }
+
+enum Glyph {
+    /// Each limit gets a mark drawn from what it actually measures: the live
+    /// session carries the Claude asterisk, the longer windows carry the symbol
+    /// for their span or their model.
+    static func layer(forKind kind: String, boxSize: CGFloat, scale: CGFloat) -> CALayer {
+        if kind == "session" { return asteriskLayer(boxSize: boxSize) }
+        // A stroked burst reads at a smaller box than a filled symbol does.
+        let symbolBox = boxSize * 0.92
+        let symbol: String
+        switch kind {
+        case "weekly_all": symbol = "calendar"
+        case "weekly_opus": symbol = "sparkles"
+        case "weekly_sonnet": symbol = "bolt.fill"
+        default: symbol = "circle.dashed"
+        }
+        return symbolLayer(symbol, boxSize: symbolBox, scale: scale)
+            ?? asteriskLayer(boxSize: boxSize)
+    }
+
+    private static func asteriskLayer(boxSize: CGFloat) -> CALayer {
+        let layer = CAShapeLayer()
+        layer.bounds = CGRect(x: 0, y: 0, width: boxSize, height: boxSize)
+        let center = CGPoint(x: boxSize / 2, y: boxSize / 2)
+        let outer = boxSize * 0.46
+        let inner = boxSize * 0.07
+        let path = CGMutablePath()
+        for i in 0..<8 {
+            let angle = CGFloat(i) * .pi / 4
+            path.move(to: CGPoint(x: center.x + cos(angle) * inner,
+                                  y: center.y + sin(angle) * inner))
+            path.addLine(to: CGPoint(x: center.x + cos(angle) * outer,
+                                     y: center.y + sin(angle) * outer))
+        }
+        layer.path = path
+        layer.strokeColor = Palette.primaryText.cgColor
+        layer.fillColor = nil
+        layer.lineWidth = boxSize * 0.11
+        layer.lineCap = .round
+        return layer
+    }
+
+    private static func symbolLayer(_ name: String, boxSize: CGFloat, scale: CGFloat) -> CALayer? {
+        guard let symbol = NSImage(systemSymbolName: name, accessibilityDescription: nil),
+              let configured = symbol.withSymbolConfiguration(
+                .init(pointSize: boxSize, weight: .semibold))
+        else { return nil }
+        // Symbols arrive as black templates. Draw one, then flood the glyph's
+        // own coverage with the text colour — masking a tint layer instead
+        // leaves the alpha unpremultiplied and the mark comes out muddy.
+        let size = configured.size
+        let tinted = NSImage(size: size, flipped: false) { rect in
+            configured.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
+            Palette.primaryText.set()
+            rect.fill(using: .sourceAtop)
+            return true
+        }
+        var rect = CGRect(origin: .zero, size: size)
+        guard let cgImage = tinted.cgImage(forProposedRect: &rect, context: nil, hints: nil)
+        else { return nil }
+        let layer = CALayer()
+        layer.bounds = CGRect(x: 0, y: 0, width: size.width, height: size.height)
+        layer.contents = cgImage
+        layer.contentsGravity = .resizeAspect
+        layer.contentsScale = scale
+        return layer
+    }
+}
