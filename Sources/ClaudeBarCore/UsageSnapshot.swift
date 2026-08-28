@@ -31,12 +31,17 @@ public struct UsageLimit: Codable, Equatable {
     }
 }
 
-public struct UsageSnapshot: Equatable {
+public struct UsageSnapshot: Codable, Equatable {
+    /// The session (5-hour) figure — the headline number, kept separate so
+    /// callers never have to depend on the ordering of `limits`.
     public let percent: Double
     public let resetsAt: Date?
-    public init(percent: Double, resetsAt: Date?) {
+    public let limits: [UsageLimit]
+
+    public init(percent: Double, resetsAt: Date?, limits: [UsageLimit] = []) {
         self.percent = percent
         self.resetsAt = resetsAt
+        self.limits = limits
     }
 }
 
