@@ -1,5 +1,21 @@
 import Foundation
 
+/// One rate limit the account is subject to, as reported by the usage
+/// endpoint. The set is server-driven rather than hardcoded: a session limit
+/// and an all-models weekly limit today, model-specific ones when the account
+/// has them.
+public struct UsageLimit: Codable, Equatable {
+    public let kind: String
+    public let percent: Double
+    public let resetsAt: Date?
+
+    public init(kind: String, percent: Double, resetsAt: Date?) {
+        self.kind = kind
+        self.percent = percent
+        self.resetsAt = resetsAt
+    }
+}
+
 public struct UsageSnapshot: Equatable {
     public let percent: Double
     public let resetsAt: Date?
