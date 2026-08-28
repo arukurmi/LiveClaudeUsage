@@ -79,6 +79,14 @@ public struct BarConfig: Equatable {
     public func threshold(forPercent percent: Double) -> Threshold {
         thresholds.first { percent <= $0.upTo } ?? thresholds.last!
     }
+
+    /// Clamped colour lookup. Every renderer wants the same thing — a colour
+    /// for a percentage that may be out of range — so none of them should be
+    /// repeating the clamp or the hex fallback.
+    public func color(forPercent percent: Double) -> (r: Double, g: Double, b: Double) {
+        let clamped = min(max(percent, 0), 100)
+        return HexColor.rgb(threshold(forPercent: clamped).color) ?? (r: 1, g: 0.29, b: 0.13)
+    }
 }
 
 public enum HexColor {
