@@ -14,6 +14,21 @@ public struct UsageLimit: Codable, Equatable {
         self.percent = percent
         self.resetsAt = resetsAt
     }
+
+    /// Name to show for this limit. Unknown kinds are humanized rather than
+    /// dropped, so a limit we have never seen still reads as something.
+    public var title: String {
+        switch kind {
+        case "session": return "Current session"
+        case "weekly_all": return "All models"
+        case "weekly_opus": return "Opus"
+        case "weekly_sonnet": return "Sonnet"
+        default:
+            let words = kind.split(separator: "_").map(String.init)
+            guard let first = words.first else { return kind }
+            return ([first.capitalized] + words.dropFirst()).joined(separator: " ")
+        }
+    }
 }
 
 public struct UsageSnapshot: Equatable {
