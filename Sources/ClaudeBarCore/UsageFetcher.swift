@@ -47,15 +47,29 @@ public enum UsageDecoder {
             limits: limits(from: payload)))
     }
 
-    /// A limit missing its kind or percentage is dropped rather than rendered
-    /// as an unnamed 0%.
+    /// The server's own array is the source of truth. Older responses without
+    /// it still carry the two windows we can name ourselves, so fall back to
+    /// those rather than handing the UI nothing to draw. A limit missing its
+    /// kind or percentage is dropped rather than rendered as an unnamed 0%.
     private static func limits(from payload: Payload) -> [UsageLimit] {
-        (payload.limits ?? []).compactMap { limit in
-            guard let kind = limit.kind, let percent = limit.percent else { return nil }
-            return UsageLimit(kind: kind,
-                              percent: percent,
-                              resetsAt: limit.resets_at.flatMap(parseISO8601))
+        if let limits = payload.limits, !limits.isEmpty {
+            let mapped = limits.compactMap { limit -> UsageLimit? in
+                guard let kind = limit.kind, let percent = limit.percent else { return nil }
+                return UsageLimit(kind: kind,
+                                  percent: percent,
+                                  resetsAt: limit.resets_at.flatMap(parseISO8601))
+            }
+            if !mapped.isEmpty { return mapped }
         }
+        var fallback = [UsageLimit(kind: "session",
+                                   percent: payload.five_hour.utilization,
+                                   resetsAt: payload.five_hour.resets_at.flatMap(parseISO8601))]
+        if let weekly = payload.seven_day {
+            fallback.append(UsageLimit(kind: "weekly_all",
+                                       percent: weekly.utilization,
+                                       resetsAt: weekly.resets_at.flatMap(parseISO8601)))
+        }
+        return fallback
     }
 
     public static func parseISO8601(_ string: String) -> Date? {
