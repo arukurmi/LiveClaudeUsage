@@ -61,7 +61,8 @@ final class UsagePoller {
 
     /// Forget accumulated backoff and fetch immediately — unless the server
     /// asked us to wait, in which case the pending timer for that window stands.
-    private func refreshNow() {
+    /// Also driven by the tab's "Refresh now" menu item.
+    func refreshNow() {
         if let until = rateLimitedUntil, until > Date() { return }
         consecutiveFailures = 0
         timer?.invalidate()

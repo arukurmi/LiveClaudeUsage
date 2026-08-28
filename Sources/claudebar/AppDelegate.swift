@@ -39,6 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         railView = RailView(config: config)
+        railView.onContextMenu = { [weak self] event in self?.showMenu(for: event) }
         railWindow = ChromelessPanel(
             contentRect: ScreenGeometry.railFrame(config: config, screen: screen, itemCount: 1),
             interactive: true)
@@ -194,5 +195,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self, !self.popoverVisible else { return }
             self.popoverWindow.orderOut(nil)
         }
+    }
+
+    // MARK: - Menu
+
+    private func showMenu(for event: NSEvent) {
+        let menu = NSMenu()
+        menu.addItem(withTitle: "Refresh now", action: #selector(refreshNow), keyEquivalent: "")
+            .target = self
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Quit ClaudeBar", action: #selector(quit), keyEquivalent: "")
+            .target = self
+        NSMenu.popUpContextMenu(menu, with: event, for: railView)
+    }
+
+    @objc private func refreshNow() {
+        poller?.refreshNow()
+    }
+
+    @objc private func quit() {
+        NSApp.terminate(nil)
     }
 }
