@@ -182,7 +182,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             popoverWindow.orderFrontRegardless()
             popoverWindow.invalidateShadow()
         }
-        guard animated else {
+        guard animated, !Motion.reduced else {
             popoverWindow.alphaValue = visible ? 1 : 0
             if !visible { popoverWindow.orderOut(nil) }
             return

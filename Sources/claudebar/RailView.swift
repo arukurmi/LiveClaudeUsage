@@ -148,7 +148,7 @@ final class RailView: NSView {
     private func applyState(animated: Bool) {
         guard bounds.width > 0, bounds.height > 0 else { return }
         CATransaction.begin()
-        CATransaction.setAnimationDuration(animated ? 0.55 : 0)
+        CATransaction.setAnimationDuration(animated ? Motion.duration(0.55) : 0)
         if !animated { CATransaction.setDisableActions(true) }
 
         background.frame = bounds
